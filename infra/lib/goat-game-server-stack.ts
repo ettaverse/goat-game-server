@@ -13,6 +13,7 @@ export class GoatGameServerStack extends cdk.Stack {
     const imageAsset = new ecr_assets.DockerImageAsset(this, "GoatGameServerImage", {
       directory: path.join(__dirname, "../.."),
       exclude: ["infra", "cdk.out", ".git", "node_modules", "tests"],
+      platform: ecr_assets.Platform.LINUX_AMD64,
     })
 
     // IAM role for App Runner to pull from ECR
