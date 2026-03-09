@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid"
+import { randomUUID } from "crypto"
 import { MatchRequest, BattleResult, BattleStep, BattleStartAction, HeroBuffsAction } from "../engine/types"
 import { createTeam, calculateTeamSpeed, applyHeroBuffs } from "../engine/team"
 import { createSnapshot, isBattleOver } from "../engine/stateManager"
@@ -16,7 +16,7 @@ export class BattleService {
    * Simulates a turn-based battle between two teams of units
    */
   simulateBattle(request: MatchRequest): BattleResult {
-    const seed = request.seed || uuidv4()
+    const seed = request.seed || randomUUID()
     const steps: BattleStep[] = []
     let round = 0
 

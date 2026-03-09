@@ -6,4 +6,3 @@ cdk.out
 .gitignore
 README.md
 tests
-jest.config.js

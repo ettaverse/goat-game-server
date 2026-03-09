@@ -1,51 +1,49 @@
 import * as cdk from "aws-cdk-lib"
 import * as apprunner from "aws-cdk-lib/aws-apprunner"
+import * as ecr_assets from "aws-cdk-lib/aws-ecr-assets"
 import * as iam from "aws-cdk-lib/aws-iam"
 import { Construct } from "constructs"
+import * as path from "path"
 
 export class GoatGameServerStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props)
+
+    // Build Docker image and push to ECR
+    const imageAsset = new ecr_assets.DockerImageAsset(this, "GoatGameServerImage", {
+      directory: path.join(__dirname, "../.."),
+      exclude: ["infra", "cdk.out", ".git", "node_modules", "tests"],
+    })
+
+    // IAM role for App Runner to pull from ECR
+    const accessRole = new iam.Role(this, "AppRunnerECRAccessRole", {
+      assumedBy: new iam.ServicePrincipal("build.apprunner.amazonaws.com"),
+    })
+    imageAsset.repository.grantPull(accessRole)
 
     // IAM role for the App Runner instance (runtime)
     const instanceRole = new iam.Role(this, "AppRunnerInstanceRole", {
       assumedBy: new iam.ServicePrincipal("tasks.apprunner.amazonaws.com"),
     })
 
-    // App Runner Service — uses GitHub connection for source code
-    // The connection must be created manually in the AWS Console first:
-    // App Runner > GitHub connections > Create new connection
-    const githubConnectionArn = new cdk.CfnParameter(this, "GitHubConnectionArn", {
-      type: "String",
-      description: "ARN of the App Runner GitHub connection (create in AWS Console > App Runner > GitHub connections)",
-    })
-
+    // App Runner Service
     const service = new apprunner.CfnService(this, "GoatGameServerService", {
       serviceName: "goat-game-server",
       sourceConfiguration: {
         authenticationConfiguration: {
-          connectionArn: githubConnectionArn.valueAsString,
+          accessRoleArn: accessRole.roleArn,
         },
-        codeRepository: {
-          repositoryUrl: "https://github.com/ettaverse/goat-game-server",
-          sourceCodeVersion: {
-            type: "BRANCH",
-            value: "main",
-          },
-          codeConfiguration: {
-            configurationSource: "API",
-            codeConfigurationValues: {
-              runtime: "NODEJS_18",
-              buildCommand: "npm ci && npm run build",
-              startCommand: "npm start",
-              port: "3000",
-              runtimeEnvironmentVariables: [
-                { name: "NODE_ENV", value: "production" },
-              ],
-            },
+        imageRepository: {
+          imageIdentifier: imageAsset.imageUri,
+          imageRepositoryType: "ECR",
+          imageConfiguration: {
+            port: "3000",
+            runtimeEnvironmentVariables: [
+              { name: "NODE_ENV", value: "production" },
+            ],
           },
         },
-        autoDeploymentsEnabled: true,
+        autoDeploymentsEnabled: false,
       },
       instanceConfiguration: {
         cpu: "0.25 vCPU",
