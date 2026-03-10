@@ -1,6 +1,5 @@
 import { Elysia } from "elysia"
-import { getAllCards, getAllHeroCards } from "../data/cards"
+import { getAllGameCards } from "../data/cards"
 
 export const cardsRoute = new Elysia()
-  .get("/cards", () => getAllCards())
-  .get("/heroes", () => getAllHeroCards())
+  .get("/cards", () => getAllGameCards())

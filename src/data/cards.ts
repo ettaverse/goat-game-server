@@ -264,3 +264,20 @@ export function getHeroDefinition(heroId: string): HeroCardDefinition {
 export function getAllHeroCards(): HeroCardDefinition[] {
   return [...HERO_CARDS]
 }
+
+/**
+ * Discriminated union type for all game cards
+ */
+export type GameCard =
+  | (CardDefinition & { cardType: "standard" })
+  | (HeroCardDefinition & { cardType: "hero" })
+
+/**
+ * Gets all cards (standard and hero) as a single flat list with a type discriminator
+ */
+export function getAllGameCards(): GameCard[] {
+  return [
+    ...getAllCards().map((card) => ({ ...card, cardType: "standard" as const })),
+    ...getAllHeroCards().map((hero) => ({ ...hero, cardType: "hero" as const })),
+  ]
+}
